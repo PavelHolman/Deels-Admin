@@ -37,8 +37,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -555,44 +553,54 @@ fun StatesFilter(
     selectedStates: List<OrderState>,
     onChange: (List<OrderState>) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val remainingStates = OrderState.knownEntries - selectedStates
-
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.horizontalScroll(rememberScrollState())
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .horizontalScroll(rememberScrollState())
+            .fillMaxWidth()
     ) {
-        // Selected states as chips
-        selectedStates.forEach { state ->
-            FilterChip(text = state.name, color = state.color, selected = true) {
-                onChange(selectedStates - state)
-            }
-        }
-
-        // Add State button
-        Box(
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .clickable { expanded = true }
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-            Text("+", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        }
-
-        // Dropdown menu with remaining states
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            remainingStates.forEach { state ->
-                DropdownMenuItem(
-                    text = { Text(state.name) },
-                    onClick = {
-                        onChange(selectedStates + state)
+        OrderState.knownEntries.forEach { state ->
+            FilterChip(
+                text = state.name,
+                color = state.color,
+                selected = state in selectedStates,
+                onClick = {
+                    val newSelection = if (state in selectedStates) {
+                        selectedStates - state
+                    } else {
+                        selectedStates + state
                     }
-                )
-            }
+                    onChange(newSelection)
+                }
+            )
         }
+    }
+}
+
+@Composable
+fun FilterChip(
+    text: String,
+    color: Color = MaterialTheme.colorScheme.primary,
+    selected: Boolean,
+    onClick: () -> Unit,
+    enabled: Boolean = true
+) {
+    Box(
+        modifier = Modifier
+            .clickable(enabled = enabled) { onClick() }
+            .background(
+                color = if (selected) color.copy(alpha = 0.2f) else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
@@ -654,34 +662,6 @@ fun FilterChipWithIcon(
         )
     }
 }
-
-@Composable
-fun FilterChip(
-    text: String,
-    color: Color = MaterialTheme.colorScheme.primary,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .background(
-                color = if (selected) color.copy(alpha = 0.2f) else Color.Transparent,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = text,
-            color = if (selected) color else MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
-
 
 @Composable
 fun DatePickerButton(date: Instant, onDateSelected: (Instant) -> Unit) {
