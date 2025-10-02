@@ -77,37 +77,79 @@ fun App() {
     MaterialTheme {
         val isLoggedIn by Oidc.isLoggedInFlow.collectAsState(initial = false)
 
-        Column(
-            modifier = Modifier.background(color = MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding().fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(modifier = Modifier.size(size = 20.dp))
-            Text(text = "Deels Admin", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.size(size = 20.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                AsyncButton(
-                    modifier = Modifier.weight(weight = 1f), enabled = true, onClick = {
-                        if (isLoggedIn) {
-                            Oidc.logout()
-                        } else {
-                            Oidc.login()
-                        }
-                    }) {
-                    Text(text = if (isLoggedIn) "Log out" else "Log in")
-                }
-            }
+        if (!isLoggedIn) {
+            LoggedOutScreen { Oidc.login() }
+        } else {
+            LoggedInScreen { Oidc.logout() }
+        }
+    }
+}
 
-            when (isLoggedIn) {
-                false -> Text(text = "Please log in to see orders.")
-                true -> OrdersSection()
+@Composable
+fun LoggedOutScreen(onLoginClick: suspend () -> Either<*, *>) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = "Deels Admin",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = "Please log in to view and manage orders",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(24.dp))
+                AsyncButton(onClick = onLoginClick) {
+                    Text("Log in")
+                }
             }
         }
     }
 }
+
+@Composable
+fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .safeContentPadding()
+            .padding(horizontal = 12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncButton(
+                onClick = onLogoutClick,
+                content = { Text("Log out") },
+                enabled = true,
+                modifier = Modifier.size(width = 100.dp, height = 36.dp)
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        OrdersSection()
+    }
+}
+
 
 @Composable
 fun OrdersSection() {
