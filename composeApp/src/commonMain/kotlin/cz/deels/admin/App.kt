@@ -83,6 +83,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -194,10 +195,9 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
 @Composable
 fun OrdersSection() {
     var filter by remember {
-        val tz = TimeZone.currentSystemDefault()
-        val today = Clock.System.now().toLocalDateTime(tz).date
-        val from = today.minus(1, DateTimeUnit.MONTH).atStartOfDayIn(tz)
-        val to = today.plus(1, DateTimeUnit.DAY).atStartOfDayIn(tz)
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val to = today.plus(1, DateTimeUnit.DAY)
+        val from = to.minus(1, DateTimeUnit.MONTH)
 
         mutableStateOf(
             OrdersFilter(
@@ -336,17 +336,28 @@ val Order.Item.Type.icon: ImageVector
         Order.Item.Type.Loyalty -> Icons.Default.Star
     }
 
-fun Instant.formatted(): String = toLocalDateTime(TimeZone.currentSystemDefault()).format(
-    LocalDateTime.Format {
+fun Instant.formatted(): String =
+    toLocalDateTime(TimeZone.currentSystemDefault()).format(
+        LocalDateTime.Format {
+            day(Padding.NONE)
+            char('.')
+            monthNumber(Padding.NONE)
+            char('.')
+            year()
+            char(' ')
+            hour(Padding.NONE)
+            char(':')
+            minute(Padding.ZERO)
+        }
+    )
+
+fun LocalDate.formatted(): String = format(
+    LocalDate.Format {
         day(Padding.NONE)
         char('.')
         monthNumber(Padding.NONE)
         char('.')
         year()
-        char(' ')
-        hour(Padding.NONE)
-        char(':')
-        minute(Padding.ZERO)
     }
 )
 
@@ -767,8 +778,8 @@ fun FilterChipWithIcon(
 @Composable
 fun DatePickerField(
     label: String,
-    selectedInstant: Instant,
-    onDateSelected: (Instant) -> Unit
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit
 ) {
     var showPicker by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -785,13 +796,17 @@ fun DatePickerField(
         Spacer(Modifier.width(8.dp))
         Column {
             Text(text = label, style = MaterialTheme.typography.labelSmall)
-            Text(text = selectedInstant.formatted(), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = selectedDate.formatted(),
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 
     if (showPicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedInstant.toEpochMilliseconds()
+            initialSelectedDateMillis = selectedDate.atStartOfDayIn(TimeZone.UTC)
+                .toEpochMilliseconds()
         )
 
         DatePickerDialog(
@@ -799,7 +814,8 @@ fun DatePickerField(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        onDateSelected(Instant.fromEpochMilliseconds(millis))
+                        val timestamp = Instant.fromEpochMilliseconds(millis)
+                        onDateSelected(timestamp.toLocalDateTime(TimeZone.currentSystemDefault()).date)
                     }
                     showPicker = false
                     focusManager.clearFocus()

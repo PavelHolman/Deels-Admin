@@ -6,6 +6,9 @@ import cz.deels.graphql.OrdersQuery
 import cz.deels.graphql.type.OrderState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlin.time.Instant
 
 data class Connection<T>(
@@ -17,8 +20,8 @@ data class Connection<T>(
 data class OrdersFilter(
     val states: List<OrderState>,
     val itemTypes: List<Order.Item.Type>,
-    val from: Instant,
-    val to: Instant,
+    val from: LocalDate,
+    val to: LocalDate,
     val query: String,
 )
 
@@ -54,8 +57,8 @@ fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
     .query(
         OrdersQuery(
             filteredStates = filter.states,
-            after = filter.from,
-            before = filter.to
+            after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
+            before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
         )
     )
     .watch()
@@ -75,8 +78,8 @@ suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Any) {
             OrdersQuery(
                 cursor = Optional.present(cursor),
                 filteredStates = filter.states,
-                after = filter.from,
-                before = filter.to
+                after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
+                before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
             )
         )
         .executeFromNetwork()
