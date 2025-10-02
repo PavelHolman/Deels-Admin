@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocalOffer
@@ -42,12 +41,17 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,12 +82,15 @@ import cz.deels.graphql.type.OrderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
-import kotlinx.datetime.toInstant
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.time.Clock
@@ -187,11 +194,16 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
 @Composable
 fun OrdersSection() {
     var filter by remember {
+        val tz = TimeZone.currentSystemDefault()
+        val today = Clock.System.now().toLocalDateTime(tz).date
+        val from = today.minus(1, DateTimeUnit.MONTH).atStartOfDayIn(tz)
+        val to = today.plus(1, DateTimeUnit.DAY).atStartOfDayIn(tz)
+
         mutableStateOf(
             OrdersFilter(
                 states = OrderState.knownEntries,
-                from = LocalDateTime(2000, 1, 1, 0, 0).toInstant(TimeZone.UTC),
-                to = LocalDateTime(3000, 1, 1, 0, 0).toInstant(TimeZone.UTC),
+                from = from,
+                to = to,
                 itemTypes = Order.Item.Type.entries,
                 query = "",
             )
@@ -557,8 +569,8 @@ fun OrdersFilterBar(
         Spacer(Modifier.height(8.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DatePickerButton("From", filter.from) { onFilterChange(filter.copy(from = it)) }
-            DatePickerButton("To", filter.to) { onFilterChange(filter.copy(to = it)) }
+            DatePickerField("From", filter.from) { onFilterChange(filter.copy(from = it)) }
+            DatePickerField("To", filter.to) { onFilterChange(filter.copy(to = it)) }
         }
     }
 }
@@ -751,38 +763,59 @@ fun FilterChipWithIcon(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerButton(
+fun DatePickerField(
     label: String,
-    date: Instant,
+    selectedInstant: Instant,
     onDateSelected: (Instant) -> Unit
 ) {
+    var showPicker by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
     OutlinedButton(
-        onClick = {
-            // TODO: open actual date picker dialog on each platform
-            // For now we can simulate by picking "today"
-            onDateSelected(Clock.System.now())
-        },
+        onClick = { showPicker = true },
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.height(48.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.CalendarToday,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
+            imageVector = Icons.Default.LocalOffer,
+            contentDescription = null
         )
         Spacer(Modifier.width(8.dp))
         Column {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = date.formatted(),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
+            Text(text = label, style = MaterialTheme.typography.labelSmall)
+            Text(text = selectedInstant.formatted(), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+
+    if (showPicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedInstant.toEpochMilliseconds()
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        onDateSelected(Instant.fromEpochMilliseconds(millis))
+                    }
+                    showPicker = false
+                    focusManager.clearFocus()
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showPicker = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }
