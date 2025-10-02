@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +53,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -279,6 +282,7 @@ val Order.Item.Type.icon: ImageVector
 @Composable
 fun OrderItem(order: Order) {
     val clipboardManager = LocalClipboardManager.current
+    val haptic = LocalHapticFeedback.current
     var showCopyPopup by remember { mutableStateOf(false) }
 
     fun Instant?.fmt(): String = this?.toLocalDateTime(TimeZone.currentSystemDefault())?.format(
@@ -300,7 +304,10 @@ fun OrderItem(order: Order) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
-                .clickable(onClick = { showCopyPopup = true }),
+                .combinedClickable(
+                    onClick = { /* do nothing */ },
+                    onLongClick = { showCopyPopup = true }
+                ),
             shape = RoundedCornerShape(8.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -431,31 +438,40 @@ fun OrderItem(order: Order) {
                 alignment = Alignment.Center,
                 onDismissRequest = { showCopyPopup = false }
             ) {
-                Card(
-                    shape = RoundedCornerShape(8.dp),
-                    elevation = CardDefaults.cardElevation(8.dp),
-                    modifier = Modifier.padding(16.dp)
+                Box(
+                    modifier = Modifier
+                        .background(Color.Transparent)
+                        .clickable { showCopyPopup = false }
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        elevation = CardDefaults.cardElevation(8.dp),
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Text(
-                            text = "Copy Order ID?",
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = order.id,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            clipboardManager.setText(AnnotatedString(order.id))
-                            showCopyPopup = false
-                        }) {
-                            Text("Copy")
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .clickable(enabled = false) {}, // prevent dismissal when clicking inside
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Copy Order ID?",
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = order.id,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(onClick = {
+                                clipboardManager.setText(AnnotatedString(order.id))
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                showCopyPopup = false
+                            }) {
+                                Text("Copy")
+                            }
                         }
                     }
                 }
