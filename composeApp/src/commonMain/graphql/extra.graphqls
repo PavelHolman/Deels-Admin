@@ -1,0 +1,2 @@
+extend type Query @typePolicy(connectionFields: "orders")
+extend type Order @typePolicy(keyFields: "id")

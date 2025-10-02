@@ -1,0 +1,71 @@
+query Orders($cursor: Cursor) {
+    orders(first: 20, after: $cursor, orderBy: [CREATED_DESC]) {
+        nodes {
+            ...OrderFragment
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        totalCount
+    }
+}
+
+fragment OrderFragment on Order {
+    ...OrderInfoFragment
+    store { ...StoreFragment }
+    #    customer { ...UserFragment }
+    ...OrderItemsFragment
+}
+
+fragment OrderInfoFragment on Order {
+    id
+    state
+    created
+    expiration
+    totalSum
+    currency
+}
+
+fragment StoreFragment on Store {
+    id
+    name
+    address
+}
+
+fragment UserFragment on User {
+    id
+    userName
+    email
+    firstName
+    lastName
+}
+
+fragment OrderItemsFragment on Order {
+    bundleItems {
+        nodes {
+            bundleSnapshot {
+                id
+                name
+            }
+            paidProductsPriceSum
+        }
+    }
+    discountItems {
+        nodes {
+            discountSnapshot {
+                id
+                name
+            }
+            productPrice
+        }
+    }
+    loyaltyItems {
+        nodes {
+            loyaltySnapshot {
+                id
+                name
+            }
+        }
+    }
+}
