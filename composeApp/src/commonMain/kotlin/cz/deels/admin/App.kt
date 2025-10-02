@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocalOffer
@@ -44,7 +45,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -85,6 +86,7 @@ import kotlinx.datetime.format.char
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -322,25 +324,25 @@ val Order.Item.Type.icon: ImageVector
         Order.Item.Type.Loyalty -> Icons.Default.Star
     }
 
+fun Instant.formatted(): String = toLocalDateTime(TimeZone.currentSystemDefault()).format(
+    LocalDateTime.Format {
+        day(Padding.NONE)
+        char('.')
+        monthNumber(Padding.NONE)
+        char('.')
+        year()
+        char(' ')
+        hour(Padding.NONE)
+        char(':')
+        minute(Padding.ZERO)
+    }
+)
+
 @Composable
 fun OrderItem(order: Order) {
     val clipboardManager = LocalClipboardManager.current
     val haptic = LocalHapticFeedback.current
     var showCopyPopup by remember { mutableStateOf(false) }
-
-    fun Instant?.fmt(): String = this?.toLocalDateTime(TimeZone.currentSystemDefault())?.format(
-        LocalDateTime.Format {
-            day(Padding.NONE)
-            char('.')
-            monthNumber(Padding.NONE)
-            char('.')
-            year()
-            char(' ')
-            hour(Padding.NONE)
-            char(':')
-            minute(Padding.ZERO)
-        }
-    ) ?: "No expiration"
 
     Box {
         Card(
@@ -415,7 +417,7 @@ fun OrderItem(order: Order) {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "${order.createdAt.fmt()} → ${order.expiresAt.fmt()}",
+                    text = "${order.createdAt.formatted()} → ${order.expiresAt?.formatted() ?: "No expiration"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -554,15 +556,9 @@ fun OrdersFilterBar(
 
         Spacer(Modifier.height(8.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("From:", fontWeight = FontWeight.Bold)
-            DatePickerButton(filter.from) { onFilterChange(filter.copy(from = it)) }
-
-            Text("To:", fontWeight = FontWeight.Bold)
-            DatePickerButton(filter.to) { onFilterChange(filter.copy(to = it)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            DatePickerButton("From", filter.from) { onFilterChange(filter.copy(from = it)) }
+            DatePickerButton("To", filter.to) { onFilterChange(filter.copy(to = it)) }
         }
     }
 }
@@ -756,17 +752,38 @@ fun FilterChipWithIcon(
 }
 
 @Composable
-fun DatePickerButton(date: Instant, onDateSelected: (Instant) -> Unit) {
-    // Implement your favorite date picker here.
-    Button(onClick = { /* show date picker, call onDateSelected */ }) {
-        Text(
-            date.toLocalDateTime(TimeZone.currentSystemDefault()).format(
-                LocalDateTime.Format {
-                    day(Padding.NONE); char('.'); monthNumber(Padding.NONE); char(
-                    '.'
-                ); year()
-                }
-            ))
+fun DatePickerButton(
+    label: String,
+    date: Instant,
+    onDateSelected: (Instant) -> Unit
+) {
+    OutlinedButton(
+        onClick = {
+            // TODO: open actual date picker dialog on each platform
+            // For now we can simulate by picking "today"
+            onDateSelected(Clock.System.now())
+        },
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.height(48.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.CalendarToday,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.width(8.dp))
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = date.formatted(),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
