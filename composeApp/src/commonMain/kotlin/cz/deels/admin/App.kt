@@ -204,7 +204,7 @@ fun OrdersSection() {
                 states = OrderState.knownEntries,
                 from = from,
                 to = to,
-                itemTypes = Order.Item.Type.entries,
+                itemType = null,
                 query = "",
             )
         )
@@ -573,8 +573,8 @@ fun OrdersFilterBar(
         Spacer(Modifier.height(8.dp))
 
         ItemTypeFilter(
-            selectedTypes = filter.itemTypes,
-            onChange = { onFilterChange(filter.copy(itemTypes = it)) }
+            selectedType = filter.itemType,
+            onChange = { onFilterChange(filter.copy(itemType = it)) }
         )
 
         Spacer(Modifier.height(8.dp))
@@ -717,8 +717,8 @@ fun FilterChip(
 
 @Composable
 fun ItemTypeFilter(
-    selectedTypes: List<Order.Item.Type>,
-    onChange: (List<Order.Item.Type>) -> Unit
+    selectedType: Order.Item.Type?,
+    onChange: (Order.Item.Type?) -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -729,11 +729,9 @@ fun ItemTypeFilter(
                 text = type.name,
                 icon = type.icon,
                 color = type.color,
-                selected = type in selectedTypes
+                selected = type == selectedType
             ) {
-                val newTypes = if (type in selectedTypes) selectedTypes - type
-                else selectedTypes + type
-                onChange(newTypes)
+                onChange(type.takeIf { it != selectedType })
             }
         }
     }

@@ -3,6 +3,12 @@ query Orders(
     $filteredStates: [OrderState!]!
     $after: Datetime!
     $before: Datetime!
+    $includeBundles: Boolean!
+    $includeDiscounts: Boolean!
+    $includeLoyalties: Boolean!
+    # Hack to include all when all filters are false
+    # Ideally, we could simply filter by the "true" case only
+    $includeAllInverse: Boolean!
 ) {
     orders(
         first: 20
@@ -12,6 +18,9 @@ query Orders(
             {state: {in: $filteredStates}}
             {created: {greaterThan: $after}}
             {created: {lessThan: $before}}
+            {or: [{bundleItemsExist: $includeBundles} {created: {isNull: $includeAllInverse}}]}
+            {or: [{discountItemsExist: $includeDiscounts} {created: {isNull: $includeAllInverse}}]}
+            {or: [{loyaltyItemsExist: $includeLoyalties} {created: {isNull: $includeAllInverse}}]}
         ]}
     ) {
         nodes {

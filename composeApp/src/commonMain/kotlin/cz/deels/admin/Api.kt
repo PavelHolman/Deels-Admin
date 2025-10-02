@@ -19,7 +19,7 @@ data class Connection<T>(
 
 data class OrdersFilter(
     val states: List<OrderState>,
-    val itemTypes: List<Order.Item.Type>,
+    val itemType: Order.Item.Type?,
     val from: LocalDate,
     val to: LocalDate,
     val query: String,
@@ -59,6 +59,10 @@ fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
             filteredStates = filter.states,
             after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
             before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
+            includeBundles = Order.Item.Type.Bundle == filter.itemType,
+            includeDiscounts = Order.Item.Type.Discount == filter.itemType,
+            includeLoyalties = Order.Item.Type.Loyalty == filter.itemType,
+            includeAllInverse = filter.itemType != null,
         )
     )
     .watch()
@@ -80,6 +84,10 @@ suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Any) {
                 filteredStates = filter.states,
                 after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
                 before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
+                includeBundles = Order.Item.Type.Bundle == filter.itemType,
+                includeDiscounts = Order.Item.Type.Discount == filter.itemType,
+                includeLoyalties = Order.Item.Type.Loyalty == filter.itemType,
+                includeAllInverse = filter.itemType != null,
             )
         )
         .executeFromNetwork()
