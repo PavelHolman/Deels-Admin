@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CardGiftcard
@@ -35,9 +37,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -165,83 +170,92 @@ fun OrdersSection() {
                 states = OrderState.knownEntries,
                 from = LocalDateTime(2000, 1, 1, 0, 0).toInstant(TimeZone.UTC),
                 to = LocalDateTime(3000, 1, 1, 0, 0).toInstant(TimeZone.UTC),
+                itemTypes = Order.Item.Type.entries,
+                query = "",
             )
         )
     }
     val ordersConnection by Apollo.ordersFlow(filter = filter).collectAsState(initial = null)
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        when (val c = ordersConnection) {
-            null -> item { CircularProgressIndicator() }
-            c -> {
-                val orders = c.nodes
-                val cursor = c.cursor
+    Column(modifier = Modifier.fillMaxSize()) {
+        OrdersFilterBar(
+            filter = filter,
+            onFilterChange = { filter = it },
+        )
 
-                stickyHeader {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        tonalElevation = 2.dp,
-                        shadowElevation = 2.dp
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            when (val c = ordersConnection) {
+                null -> item { CircularProgressIndicator() }
+                c -> {
+                    val orders = c.nodes
+                    val cursor = c.cursor
+
+                    stickyHeader {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            tonalElevation = 2.dp,
+                            shadowElevation = 2.dp
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.LocalOffer,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Orders",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Box(
+                            Row(
                                 modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "${orders.size}/${c.totalCount}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocalOffer,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Orders",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                            RoundedCornerShape(12.dp)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "${orders.size}/${c.totalCount}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
-                        }
 
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                        )
+                            HorizontalDivider(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                            )
+                        }
                     }
-                }
 
-                items(items = orders, key = { order -> order.id }) { order ->
-                    OrderItem(order)
-                }
-                if (cursor != null) {
-                    item {
-                        LaunchedEffect(cursor) {
-                            Apollo.nextOrdersPage(filter = filter, cursor = cursor)
+                    items(items = orders, key = { order -> order.id }) { order ->
+                        OrderItem(order)
+                    }
+                    if (cursor != null) {
+                        item {
+                            LaunchedEffect(cursor) {
+                                Apollo.nextOrdersPage(filter = filter, cursor = cursor)
+                            }
+                            CircularProgressIndicator()
                         }
-                        CircularProgressIndicator()
                     }
                 }
             }
@@ -276,16 +290,16 @@ val OrderState.color: Color
 
 val Order.Item.Type.color: Color
     get() = when (this) {
-        Order.Item.Type.BUNDLE -> Color(0xFF03A9F4)
-        Order.Item.Type.DISCOUNT -> Color(0xFF4CAF50)
-        Order.Item.Type.LOYALTY -> Color(0xFFFFC107)
+        Order.Item.Type.Bundle -> Color(0xFF03A9F4)
+        Order.Item.Type.Discount -> Color(0xFF4CAF50)
+        Order.Item.Type.Loyalty -> Color(0xFFFFC107)
     }
 
 val Order.Item.Type.icon: ImageVector
     get() = when (this) {
-        Order.Item.Type.BUNDLE -> Icons.Default.CardGiftcard
-        Order.Item.Type.DISCOUNT -> Icons.Default.LocalOffer
-        Order.Item.Type.LOYALTY -> Icons.Default.Star
+        Order.Item.Type.Bundle -> Icons.Default.CardGiftcard
+        Order.Item.Type.Discount -> Icons.Default.LocalOffer
+        Order.Item.Type.Loyalty -> Icons.Default.Star
     }
 
 @Composable
@@ -489,6 +503,200 @@ fun OrderItem(order: Order) {
     }
 }
 
+@Composable
+fun OrdersFilterBar(
+    filter: OrdersFilter,
+    onFilterChange: (OrdersFilter) -> Unit,
+) {
+    var expandedStates by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+
+        // --- Query ---
+        OutlinedTextField(
+            value = filter.query,
+            onValueChange = { onFilterChange(filter.copy(query = it)) },
+            label = { Text("Search (store, address, customer)") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        StatesFilter(
+            selectedStates = filter.states,
+            onChange = { onFilterChange(filter.copy(states = it)) }
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        ItemTypeFilter(
+            selectedTypes = filter.itemTypes,
+            onChange = { onFilterChange(filter.copy(itemTypes = it)) }
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("From:", fontWeight = FontWeight.Bold)
+            DatePickerButton(filter.from) { onFilterChange(filter.copy(from = it)) }
+
+            Text("To:", fontWeight = FontWeight.Bold)
+            DatePickerButton(filter.to) { onFilterChange(filter.copy(to = it)) }
+        }
+    }
+}
+
+@Composable
+fun StatesFilter(
+    selectedStates: List<OrderState>,
+    onChange: (List<OrderState>) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val remainingStates = OrderState.knownEntries - selectedStates
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.horizontalScroll(rememberScrollState())
+    ) {
+        // Selected states as chips
+        selectedStates.forEach { state ->
+            FilterChip(text = state.name, color = state.color, selected = true) {
+                onChange(selectedStates - state)
+            }
+        }
+
+        // Add State button
+        Box(
+            modifier = Modifier
+                .background(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Text("+", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        }
+
+        // Dropdown menu with remaining states
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            remainingStates.forEach { state ->
+                DropdownMenuItem(
+                    text = { Text(state.name) },
+                    onClick = {
+                        onChange(selectedStates + state)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ItemTypeFilter(
+    selectedTypes: List<Order.Item.Type>,
+    onChange: (List<Order.Item.Type>) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Order.Item.Type.entries.forEach { type ->
+            FilterChipWithIcon(
+                text = type.name,
+                icon = type.icon,
+                color = type.color,
+                selected = type in selectedTypes
+            ) {
+                val newTypes = if (type in selectedTypes) selectedTypes - type
+                else selectedTypes + type
+                onChange(newTypes)
+            }
+        }
+    }
+}
+
+@Composable
+fun FilterChipWithIcon(
+    text: String,
+    icon: ImageVector,
+    color: Color = MaterialTheme.colorScheme.primary,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .background(
+                color = if (selected) color.copy(alpha = 0.2f) else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (selected) color else Color.Gray,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = text,
+            color = if (selected) color else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+fun FilterChip(
+    text: String,
+    color: Color = MaterialTheme.colorScheme.primary,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                color = if (selected) color.copy(alpha = 0.2f) else Color.Transparent,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = text,
+            color = if (selected) color else MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+
+@Composable
+fun DatePickerButton(date: Instant, onDateSelected: (Instant) -> Unit) {
+    // Implement your favorite date picker here.
+    Button(onClick = { /* show date picker, call onDateSelected */ }) {
+        Text(
+            date.toLocalDateTime(TimeZone.currentSystemDefault()).format(
+                LocalDateTime.Format {
+                    day(Padding.NONE); char('.'); monthNumber(Padding.NONE); char(
+                    '.'
+                ); year()
+                }
+            ))
+    }
+}
 
 enum class AsyncButtonState {
     Idle, Loading, Success, Failure

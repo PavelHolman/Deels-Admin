@@ -16,8 +16,10 @@ data class Connection<T>(
 
 data class OrdersFilter(
     val states: List<OrderState>,
+    val itemTypes: List<Order.Item.Type>,
     val from: Instant,
     val to: Instant,
+    val query: String,
 )
 
 data class Order(
@@ -43,7 +45,7 @@ data class Order(
         val type: Type,
     ) {
         enum class Type {
-            BUNDLE, DISCOUNT, LOYALTY
+            Bundle, Discount, Loyalty
         }
     }
 }
@@ -101,21 +103,21 @@ private fun OrdersQuery.Node.toOrder(): Order = with(orderFragment.orderInfoFrag
                     id = it.bundleSnapshot.id,
                     name = it.bundleSnapshot.name,
                     price = it.paidProductsPriceSum,
-                    type = Order.Item.Type.BUNDLE
+                    type = Order.Item.Type.Bundle
                 )
             } + discountItems.nodes.map {
                 Order.Item(
                     id = it.discountSnapshot.id,
                     name = it.discountSnapshot.name,
                     price = it.productPrice,
-                    type = Order.Item.Type.DISCOUNT
+                    type = Order.Item.Type.Discount
                 )
             } + loyaltyItems.nodes.map {
                 Order.Item(
                     id = it.loyaltySnapshot.id,
                     name = it.loyaltySnapshot.name,
                     price = 0.0,
-                    type = Order.Item.Type.LOYALTY
+                    type = Order.Item.Type.Loyalty
                 )
             }
         }
