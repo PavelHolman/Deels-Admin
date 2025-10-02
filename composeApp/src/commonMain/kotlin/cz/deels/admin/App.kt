@@ -28,9 +28,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,10 +61,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -134,29 +142,43 @@ fun LoggedOutScreen(onLoginClick: suspend () -> Either<*, *>) {
 
 @Composable
 fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
-    Column(
+    val focusManager = LocalFocusManager.current
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
+            .pointerInput(Unit) {
+                while (true) {
+                    awaitPointerEventScope {
+                        val event = awaitPointerEvent()
+                        if (event.changes.any { it.changedToUp() }) {
+                            focusManager.clearFocus(force = true)
+                        }
+                    }
+                }
+            }
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
             .padding(horizontal = 12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncButton(
-                onClick = onLogoutClick,
-                content = { Text("Log out") },
-                enabled = true,
-                modifier = Modifier.size(width = 100.dp, height = 36.dp)
-            )
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncButton(
+                    onClick = onLogoutClick,
+                    content = { Text("Log out") },
+                    enabled = true,
+                    modifier = Modifier.size(width = 100.dp, height = 36.dp)
+                )
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OrdersSection()
         }
-
-        Spacer(Modifier.height(12.dp))
-
-        OrdersSection()
     }
 }
 
@@ -506,17 +528,14 @@ fun OrdersFilterBar(
     filter: OrdersFilter,
     onFilterChange: (OrdersFilter) -> Unit,
 ) {
-    var expandedStates by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-
-        // --- Query ---
-        OutlinedTextField(
-            value = filter.query,
-            onValueChange = { onFilterChange(filter.copy(query = it)) },
-            label = { Text("Search (store, address, customer)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        SearchBar(
+            query = filter.query,
+            onQueryChange = { onFilterChange(filter.copy(query = it)) }
         )
 
         Spacer(Modifier.height(8.dp))
@@ -544,6 +563,79 @@ fun OrdersFilterBar(
 
             Text("To:", fontWeight = FontWeight.Bold)
             DatePickerButton(filter.to) { onFilterChange(filter.copy(to = it)) }
+        }
+    }
+}
+
+@Composable
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val focusManager = LocalFocusManager.current
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(Modifier.width(8.dp))
+
+            androidx.compose.foundation.text.BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 4.dp),
+                decorationBox = { innerTextField ->
+                    if (query.isEmpty()) {
+                        Text(
+                            "Search by store, customer, or campaign",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    innerTextField()
+                },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Search
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = { focusManager.clearFocus() }
+                )
+            )
+
+            if (query.isNotEmpty()) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Clear",
+                    modifier = Modifier
+                        .clickable {
+                            onQueryChange("")
+                            focusManager.clearFocus()
+                        }
+                        .padding(4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
