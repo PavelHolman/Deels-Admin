@@ -71,6 +71,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.time.Duration
@@ -156,10 +157,18 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
     }
 }
 
-
 @Composable
 fun OrdersSection() {
-    val ordersConnection by Apollo.ordersFlow().collectAsState(initial = null)
+    var filter by remember {
+        mutableStateOf(
+            OrdersFilter(
+                states = OrderState.knownEntries,
+                from = LocalDateTime(2000, 1, 1, 0, 0).toInstant(TimeZone.UTC),
+                to = LocalDateTime(3000, 1, 1, 0, 0).toInstant(TimeZone.UTC),
+            )
+        )
+    }
+    val ordersConnection by Apollo.ordersFlow(filter = filter).collectAsState(initial = null)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -230,7 +239,7 @@ fun OrdersSection() {
                 if (cursor != null) {
                     item {
                         LaunchedEffect(cursor) {
-                            Apollo.nextOrdersPage(cursor = cursor)
+                            Apollo.nextOrdersPage(filter = filter, cursor = cursor)
                         }
                         CircularProgressIndicator()
                     }

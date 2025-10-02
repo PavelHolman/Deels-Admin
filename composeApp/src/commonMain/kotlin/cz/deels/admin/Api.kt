@@ -14,6 +14,12 @@ data class Connection<T>(
     val totalCount: Int,
 )
 
+data class OrdersFilter(
+    val states: List<OrderState>,
+    val from: Instant,
+    val to: Instant,
+)
+
 data class Order(
     val id: String,
     val createdAt: Instant,
@@ -42,8 +48,14 @@ data class Order(
     }
 }
 
-fun Apollo.ordersFlow(): Flow<Connection<Order>?> = client
-    .query(OrdersQuery())
+fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
+    .query(
+        OrdersQuery(
+            filteredStates = filter.states,
+            after = filter.from,
+            before = filter.to
+        )
+    )
     .watch()
     .map { response ->
         response.data?.orders?.let { data ->
@@ -55,8 +67,17 @@ fun Apollo.ordersFlow(): Flow<Connection<Order>?> = client
         }
     }
 
-suspend fun Apollo.nextOrdersPage(cursor: Any) {
-    client.query(OrdersQuery(cursor = Optional.present(cursor))).executeFromNetwork()
+suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Any) {
+    client
+        .query(
+            OrdersQuery(
+                cursor = Optional.present(cursor),
+                filteredStates = filter.states,
+                after = filter.from,
+                before = filter.to
+            )
+        )
+        .executeFromNetwork()
 }
 
 private fun OrdersQuery.Node.toOrder(): Order = with(orderFragment.orderInfoFragment) {

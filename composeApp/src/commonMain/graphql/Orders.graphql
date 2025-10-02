@@ -1,5 +1,19 @@
-query Orders($cursor: Cursor) {
-    orders(first: 20, after: $cursor, orderBy: [CREATED_DESC]) {
+query Orders(
+    $cursor: Cursor
+    $filteredStates: [OrderState!]!
+    $after: Datetime!
+    $before: Datetime!
+) {
+    orders(
+        first: 20
+        after: $cursor
+        orderBy: [CREATED_DESC]
+        filter: {and: [
+            {state: {in: $filteredStates}}
+            {created: {greaterThan: $after}}
+            {created: {lessThan: $before}}
+        ]}
+    ) {
         nodes {
             ...OrderFragment
         }
