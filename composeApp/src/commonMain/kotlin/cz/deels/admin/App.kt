@@ -114,9 +114,9 @@ fun App() {
         val isLoggedIn by Oidc.isLoggedInFlow.collectAsState(initial = false)
 
         if (!isLoggedIn) {
-            LoggedOutScreen { Oidc.login() }
+            LoggedOutScreen(onLoginClick = Oidc::login)
         } else {
-            LoggedInScreen { Oidc.logout() }
+            LoggedInScreen(onLogoutClick = Oidc::logout)
         }
     }
 }
@@ -126,30 +126,30 @@ fun LoggedOutScreen(onLoginClick: suspend () -> Either<*, *>) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.primaryContainer),
+            .background(color = MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(8.dp),
-            modifier = Modifier.padding(16.dp)
+            shape = RoundedCornerShape(size = 12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            modifier = Modifier.padding(all = 16.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(all = 24.dp)
             ) {
                 Text(
                     text = "Deels Admin",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(height = 16.dp))
                 Text(
                     text = "Please log in to view and manage orders",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(height = 24.dp))
                 AsyncButton(onClick = onLoginClick) {
                     Text("Log in")
                 }
@@ -207,8 +207,8 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
 fun OrdersSection() {
     var filter by remember {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val to = today.plus(1, DateTimeUnit.DAY)
-        val from = to.minus(1, DateTimeUnit.MONTH)
+        val to = today.plus(value = 1, unit = DateTimeUnit.DAY)
+        val from = to.minus(value = 1, unit = DateTimeUnit.MONTH)
 
         mutableStateOf(
             OrdersFilter(
@@ -270,9 +270,9 @@ fun OrdersSection() {
                                         imageVector = Icons.Default.LocalOffer,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(size = 20.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(width = 8.dp))
                                     Text(
                                         text = "Orders",
                                         style = MaterialTheme.typography.titleMedium,
@@ -283,8 +283,8 @@ fun OrdersSection() {
                                 Box(
                                     modifier = Modifier
                                         .background(
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                            RoundedCornerShape(12.dp)
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                            shape = RoundedCornerShape(12.dp)
                                         )
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
@@ -300,7 +300,9 @@ fun OrdersSection() {
                             HorizontalDivider(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                                    .background(
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                                    )
                             )
                         }
                     }
@@ -401,11 +403,10 @@ fun OrderItem(order: Order) {
                     onClick = { /* do nothing */ },
                     onLongClick = { showCopyPopup = true }
                 ),
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(size = 8.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -414,7 +415,7 @@ fun OrderItem(order: Order) {
                         Box(
                             modifier = Modifier
                                 .background(
-                                    color = Color(0xFFD1C4E9),
+                                    color = Color(color = 0xFFD1C4E9),
                                     shape = RoundedCornerShape(12.dp),
                                 )
                                 .padding(horizontal = 8.dp, vertical = 2.dp)
@@ -423,11 +424,11 @@ fun OrderItem(order: Order) {
                                 text = "Pickup",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF512DA8),
+                                color = Color(color = 0xFF512DA8),
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(width = 8.dp))
 
                         Text(
                             text = "${order.items.size} item${if (order.items.size > 1) "s" else ""}",
@@ -436,12 +437,15 @@ fun OrderItem(order: Order) {
                         )
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(weight = 1f))
 
                     val statusColor = order.status.color
                     Box(
                         modifier = Modifier
-                            .background(statusColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                            .background(
+                                color = statusColor.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(4.dp)
+                            )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
@@ -453,7 +457,7 @@ fun OrderItem(order: Order) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(height = 4.dp))
 
                 Text(
                     text = "${order.store.name} (${order.store.address})",
@@ -462,7 +466,7 @@ fun OrderItem(order: Order) {
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(height = 4.dp))
 
                 Text(
                     text = "${order.createdAt.formatted()} → ${order.expiresAt?.formatted() ?: "No expiration"}",
@@ -480,15 +484,15 @@ fun OrderItem(order: Order) {
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(weight = 1f)
                             ) {
                                 Icon(
                                     imageVector = item.type.icon,
                                     contentDescription = null,
                                     tint = item.type.color,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(size = 16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(width = 4.dp))
                                 Text(
                                     text = item.name.ifEmpty { "Unnamed" },
                                     style = MaterialTheme.typography.bodySmall,
@@ -537,13 +541,13 @@ fun OrderItem(order: Order) {
                         .clickable { showCopyPopup = false }
                 ) {
                     Card(
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = CardDefaults.cardElevation(8.dp),
-                        modifier = Modifier.padding(16.dp)
+                        shape = RoundedCornerShape(size = 8.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        modifier = Modifier.padding(all = 16.dp)
                     ) {
                         Column(
                             modifier = Modifier
-                                .padding(16.dp)
+                                .padding(all = 16.dp)
                                 .clickable(enabled = false) {}, // prevent dismissal when clicking inside
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
@@ -551,19 +555,19 @@ fun OrderItem(order: Order) {
                                 text = "Copy Order ID?",
                                 fontWeight = FontWeight.Bold
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(height = 4.dp))
                             Text(
                                 text = order.id,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(height = 12.dp))
                             Button(onClick = {
-                                clipboardManager.setText(AnnotatedString(order.id))
+                                clipboardManager.setText(AnnotatedString(text = order.id))
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 showCopyPopup = false
                             }) {
-                                Text("Copy")
+                                Text(text = "Copy")
                             }
                         }
                     }
@@ -588,25 +592,29 @@ fun OrdersFilterBar(
             onQueryChange = { onFilterChange(filter.copy(query = it)) }
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(height = 8.dp))
 
         StatesFilter(
             selectedStates = filter.states,
             onChange = { onFilterChange(filter.copy(states = it)) }
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(height = 8.dp))
 
         ItemTypeFilter(
             selectedType = filter.itemType,
             onChange = { onFilterChange(filter.copy(itemType = it)) }
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(height = 8.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            DatePickerField("From", filter.from) { onFilterChange(filter.copy(from = it)) }
-            DatePickerField("To", filter.to) { onFilterChange(filter.copy(to = it)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(space = 12.dp)) {
+            DatePickerField(label = "From", selectedDate = filter.from) {
+                onFilterChange(filter.copy(from = it))
+            }
+            DatePickerField(label = "To", selectedDate = filter.to) {
+                onFilterChange(filter.copy(to = it))
+            }
         }
     }
 }
@@ -621,7 +629,7 @@ fun SearchBar(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(size = 24.dp),
         tonalElevation = 2.dp,
         shadowElevation = 2.dp,
         color = MaterialTheme.colorScheme.surface,
@@ -637,7 +645,7 @@ fun SearchBar(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(width = 8.dp))
 
             androidx.compose.foundation.text.BasicTextField(
                 value = query,
@@ -647,12 +655,12 @@ fun SearchBar(
                     color = MaterialTheme.colorScheme.onSurface
                 ),
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(weight = 1f)
                     .padding(vertical = 4.dp),
                 decorationBox = { innerTextField ->
                     if (query.isEmpty()) {
                         Text(
-                            "Search by store, customer, or campaign",
+                            text = "Search by store, customer, or campaign",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -690,9 +698,9 @@ fun StatesFilter(
     onChange: (List<OrderState>) -> Unit
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
         modifier = Modifier
-            .horizontalScroll(rememberScrollState())
+            .horizontalScroll(state = rememberScrollState())
             .fillMaxWidth()
     ) {
         OrderState.knownEntries.forEach { state ->
@@ -746,7 +754,7 @@ fun ItemTypeFilter(
     onChange: (Order.Item.Type?) -> Unit
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Order.Item.Type.entries.forEach { type ->
@@ -775,18 +783,18 @@ fun FilterChipWithIcon(
         modifier = Modifier
             .background(
                 color = if (selected) color.copy(alpha = 0.2f) else Color.Transparent,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(size = 16.dp)
             )
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Icon(
-            icon,
+            imageVector = icon,
             contentDescription = null,
             tint = if (selected) color else Color.Gray,
             modifier = Modifier.size(16.dp)
         )
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(width = 4.dp))
         Text(
             text = text,
             color = if (selected) color else MaterialTheme.colorScheme.onSurface,
@@ -809,14 +817,14 @@ fun DatePickerField(
 
     OutlinedButton(
         onClick = { showPicker = true },
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.height(48.dp)
+        shape = RoundedCornerShape(size = 12.dp),
+        modifier = Modifier.height(height = 48.dp)
     ) {
         Icon(
             imageVector = Icons.Default.LocalOffer,
             contentDescription = null
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(width = 8.dp))
         Column {
             Text(text = label, style = MaterialTheme.typography.labelSmall)
             Text(
@@ -837,20 +845,20 @@ fun DatePickerField(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val timestamp = Instant.fromEpochMilliseconds(millis)
+                        val timestamp = Instant.fromEpochMilliseconds(epochMilliseconds = millis)
                         onDateSelected(timestamp.toLocalDateTime(TimeZone.currentSystemDefault()).date)
                     }
                     showPicker = false
                     focusManager.clearFocus()
                 }) {
-                    Text("OK")
+                    Text(text = "OK")
                 }
             },
             dismissButton = {
                 TextButton(onClick = {
                     showPicker = false
                 }) {
-                    Text("Cancel")
+                    Text(text = "Cancel")
                 }
             }
         ) {
