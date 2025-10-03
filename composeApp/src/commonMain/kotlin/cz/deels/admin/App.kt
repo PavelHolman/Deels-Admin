@@ -102,6 +102,10 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -326,27 +330,38 @@ fun OrdersSection() {
 
 val OrderState.color: Color
     get() = when (this) {
-        OrderState.CREATION_DUMMY -> Color.Gray
-        OrderState.NEW -> Color(0xFF2196F3)
-        OrderState.PAYMENT_IN_PROCESS -> Color(0xFFFFA000)
-        OrderState.PAYMENT_AUTHORIZED -> Color(0xFF4CAF50)
-        OrderState.READY_FOR_FREE_PICK_UP -> Color(0xFF8BC34A)
-        OrderState.REJECTED_BY_STAFF -> Color(0xFFF44336)
-        OrderState.REJECTED_MINOR -> Color(0xFFE53935)
-        OrderState.PICKED_UP -> Color(0xFF4CAF50)
-        OrderState.FREE__PICKED_UP -> Color(0xFF43A047)
-        OrderState.EXPIRED -> Color(0xFFBDBDBD)
-        OrderState.FREE__EXPIRED -> Color(0xFF9E9E9E)
-        OrderState.PAYMENT_DELIVERED -> Color(0xFF4CAF50)
-        OrderState.EXPIRED__PAYMENT_DELIVERED -> Color(0xFF757575)
-        OrderState.PAYMENT_PROCESSED -> Color(0xFF4CAF50)
-        OrderState.EXPIRED__PAYMENT_PROCESSED -> Color(0xFF9E9E9E)
-        OrderState.STORE_SHARE_SENT -> Color(0xFF03A9F4)
-        OrderState.FORCED_REFUND_IN_PROGRESS -> Color(0xFFFF9800)
-        OrderState.REFUND_IN_PROGRESS -> Color(0xFFFFC107)
-        OrderState.FORCED_REFUNDED -> Color(0xFFD32F2F)
-        OrderState.REFUNDED -> Color(0xFFF44336)
-        OrderState.UNKNOWN__ -> Color.Gray
+        // Palette 1: dummy
+        OrderState.CREATION_DUMMY -> Color(0xFF9C92A3)            // muted purple-grey, hue ~280
+
+        // Palette 2: active / in-progress / pickups → greener/bluer
+        OrderState.NEW -> Color(0xFF1976D2)                       // deep blue, hue ~210
+        OrderState.PAYMENT_IN_PROCESS -> Color(0xFF2E7D32)        // green, hue ~120
+        OrderState.PAYMENT_AUTHORIZED -> Color(0xFF388E3C)        // green, hue ~120
+        OrderState.READY_FOR_FREE_PICK_UP -> Color(0xFF66BB6A)    // light green, hue ~130
+        OrderState.FREE__PICKED_UP -> Color(0xFF81C784)           // lighter green, hue ~130
+        OrderState.PICKED_UP -> Color(0xFF4CAF50)                 // green, hue ~120
+        OrderState.PAYMENT_PROCESSED -> Color(0xFF43A047)         // green, hue ~120
+        OrderState.PAYMENT_DELIVERED -> Color(0xFF64B5F6)         // soft blue, hue ~200
+        OrderState.STORE_SHARE_SENT -> Color(0xFF0288D1)          // cyan-blue, hue ~195
+
+        // Palette 3: rejected
+        OrderState.REJECTED_BY_STAFF -> Color(0xFFF44336)         // red, hue ~0
+        OrderState.REJECTED_MINOR -> Color(0xFFD32F2F)            // darker red, hue ~0
+
+        // Palette 4: expired / historical
+        OrderState.EXPIRED -> Color(0xFF8F7FA5)                   // darker purple-grey, hue ~260
+        OrderState.FREE__EXPIRED -> Color(0xFF8F7FA5)             // darker purple-grey, hue ~260
+        OrderState.EXPIRED__PAYMENT_DELIVERED -> Color(0xFF82769D) // even darker purple-grey, hue ~265
+        OrderState.EXPIRED__PAYMENT_PROCESSED -> Color(0xFF716B94) // muted purple-grey, hue ~270
+
+        // Palette 5: refunds → more red
+        OrderState.FORCED_REFUND_IN_PROGRESS -> Color(0xFFD32F2F) // dark red, hue ~0
+        OrderState.REFUND_IN_PROGRESS -> Color(0xFFE53935)        // bright red, hue ~0
+        OrderState.FORCED_REFUNDED -> Color(0xFFC62828)           // deeper red, hue ~0
+        OrderState.REFUNDED -> Color(0xFFB71C1C)                  // darkest red, hue ~0
+
+        // Palette 6: unknown / neutral
+        OrderState.UNKNOWN__ -> Color.Gray                         // neutral grey, no hue
     }
 
 val Order.Item.Type.color: Color
@@ -697,13 +712,48 @@ fun StatesFilter(
     selectedStates: List<OrderState>,
     onChange: (List<OrderState>) -> Unit
 ) {
+    data class HCL(val h: Float, val c: Float, val l: Float)
+
+    fun Color.toHCL(): HCL {
+        val r = red
+        val g = green
+        val b = blue
+
+        fun pivot(c: Float) = if (c > 0.04045f) ((c + 0.055f) / 1.055f).pow(2.4f) else c / 12.92f
+        val R = pivot(r)
+        val G = pivot(g)
+        val B = pivot(b)
+
+        val X = R * 0.4124f + G * 0.3576f + B * 0.1805f
+        val Y = R * 0.2126f + G * 0.7152f + B * 0.0722f
+        val Z = R * 0.0193f + G * 0.1192f + B * 0.9505f
+
+        fun f(t: Float) = if (t > 0.008856f) t.pow(1f / 3f) else (7.787f * t) + (16f / 116f)
+        val fx = f(X / 0.95047f)
+        val fy = f(Y / 1.00000f)
+        val fz = f(Z / 1.08883f)
+
+        val L = 116f * fy - 16f
+        val a = 500f * (fx - fy)
+        val bLab = 200f * (fy - fz)
+
+        val C = sqrt(a * a + bLab * bLab)
+        var H = atan2(bLab, a) * (180f / PI.toFloat())
+        if (H < 0) H += 360f
+
+        return HCL(H, C, L)
+    }
+
     Row(
         horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
         modifier = Modifier
             .horizontalScroll(state = rememberScrollState())
             .fillMaxWidth()
     ) {
-        OrderState.knownEntries.forEach { state ->
+        OrderState.knownEntries.sortedWith(
+            /* This is for sure one of ways to sort order states o.o */
+            compareByDescending { it.color.toHCL().h }
+        ).forEach { state ->
             FilterChip(
                 text = state.name,
                 color = state.color,
