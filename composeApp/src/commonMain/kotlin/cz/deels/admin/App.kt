@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocalOffer
@@ -174,27 +175,30 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
                     }
                 }
             }
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(color = MaterialTheme.colorScheme.primaryContainer)
             .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
             .padding(horizontal = 12.dp)
     ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AsyncButton(
-                    onClick = onLogoutClick,
-                    content = { Text("Log out") },
-                    enabled = true,
-                    modifier = Modifier.size(width = 100.dp, height = 36.dp)
-                )
+        OrdersSection()
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(all = 16.dp)
+        ) {
+            AsyncButton(onClick = onLogoutClick, enabled = true) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(width = 4.dp))
+                    Text(text = "Log out", style = MaterialTheme.typography.bodyMedium)
+                }
             }
-
-            Spacer(Modifier.height(12.dp))
-
-            OrdersSection()
         }
     }
 }
