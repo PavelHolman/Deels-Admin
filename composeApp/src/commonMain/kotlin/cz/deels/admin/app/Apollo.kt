@@ -21,7 +21,7 @@ import com.apollographql.cache.normalized.FetchPolicy
 import com.apollographql.cache.normalized.fetchPolicy
 import com.apollographql.cache.normalized.memory.MemoryCacheFactory
 import com.apollographql.cache.normalized.refetchPolicy
-import cz.deels.graphql.cache.Cache.cache
+import cz.deels.admin.app.graphql.cache.Cache.cache
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.last

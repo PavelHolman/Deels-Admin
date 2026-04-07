@@ -88,7 +88,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import arrow.core.Either
-import cz.deels.graphql.type.OrderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -217,7 +216,7 @@ fun OrdersSection() {
 
         mutableStateOf(
             OrdersFilter(
-                states = OrderState.knownEntries,
+                states = OrderStatus.knownEntries,
                 from = from,
                 to = to,
                 itemType = null,
@@ -329,40 +328,40 @@ fun OrdersSection() {
     }
 }
 
-val OrderState.color: Color
+val OrderStatus.color: Color
     get() = when (this) {
         // Palette 1: dummy
-        OrderState.CREATION_DUMMY -> Color(0xFF9C92A3)            // muted purple-grey, hue ~280
+        OrderStatus.CREATION_DUMMY -> Color(0xFF9C92A3)            // muted purple-grey, hue ~280
 
         // Palette 2: active / in-progress / pickups → greener/bluer
-        OrderState.NEW -> Color(0xFF1976D2)                       // deep blue, hue ~210
-        OrderState.PAYMENT_IN_PROCESS -> Color(0xFF2E7D32)        // green, hue ~120
-        OrderState.PAYMENT_AUTHORIZED -> Color(0xFF388E3C)        // green, hue ~120
-        OrderState.READY_FOR_FREE_PICK_UP -> Color(0xFF66BB6A)    // light green, hue ~130
-        OrderState.FREE__PICKED_UP -> Color(0xFF81C784)           // lighter green, hue ~130
-        OrderState.PICKED_UP -> Color(0xFF4CAF50)                 // green, hue ~120
-        OrderState.PAYMENT_PROCESSED -> Color(0xFF43A047)         // green, hue ~120
-        OrderState.PAYMENT_DELIVERED -> Color(0xFF64B5F6)         // soft blue, hue ~200
-        OrderState.STORE_SHARE_SENT -> Color(0xFF0288D1)          // cyan-blue, hue ~195
+        OrderStatus.NEW -> Color(0xFF1976D2)                       // deep blue, hue ~210
+        OrderStatus.PAYMENT_IN_PROCESS -> Color(0xFF2E7D32)        // green, hue ~120
+        OrderStatus.PAYMENT_AUTHORIZED -> Color(0xFF388E3C)        // green, hue ~120
+        OrderStatus.READY_FOR_FREE_PICK_UP -> Color(0xFF66BB6A)    // light green, hue ~130
+        OrderStatus.FREE__PICKED_UP -> Color(0xFF81C784)           // lighter green, hue ~130
+        OrderStatus.PICKED_UP -> Color(0xFF4CAF50)                 // green, hue ~120
+        OrderStatus.PAYMENT_PROCESSED -> Color(0xFF43A047)         // green, hue ~120
+        OrderStatus.PAYMENT_DELIVERED -> Color(0xFF64B5F6)         // soft blue, hue ~200
+        OrderStatus.STORE_SHARE_SENT -> Color(0xFF0288D1)          // cyan-blue, hue ~195
 
         // Palette 3: rejected
-        OrderState.REJECTED_BY_STAFF -> Color(0xFFF44336)         // red, hue ~0
-        OrderState.REJECTED_MINOR -> Color(0xFFD32F2F)            // darker red, hue ~0
+        OrderStatus.REJECTED_BY_STAFF -> Color(0xFFF44336)         // red, hue ~0
+        OrderStatus.REJECTED_MINOR -> Color(0xFFD32F2F)            // darker red, hue ~0
 
         // Palette 4: expired / historical
-        OrderState.EXPIRED -> Color(0xFF8F7FA5)                   // darker purple-grey, hue ~260
-        OrderState.FREE__EXPIRED -> Color(0xFF8F7FA5)             // darker purple-grey, hue ~260
-        OrderState.EXPIRED__PAYMENT_DELIVERED -> Color(0xFF82769D) // even darker purple-grey, hue ~265
-        OrderState.EXPIRED__PAYMENT_PROCESSED -> Color(0xFF716B94) // muted purple-grey, hue ~270
+        OrderStatus.EXPIRED -> Color(0xFF8F7FA5)                   // darker purple-grey, hue ~260
+        OrderStatus.FREE__EXPIRED -> Color(0xFF8F7FA5)             // darker purple-grey, hue ~260
+        OrderStatus.EXPIRED__PAYMENT_DELIVERED -> Color(0xFF82769D) // even darker purple-grey, hue ~265
+        OrderStatus.EXPIRED__PAYMENT_PROCESSED -> Color(0xFF716B94) // muted purple-grey, hue ~270
 
         // Palette 5: refunds → more red
-        OrderState.FORCED_REFUND_IN_PROGRESS -> Color(0xFFD32F2F) // dark red, hue ~0
-        OrderState.REFUND_IN_PROGRESS -> Color(0xFFE53935)        // bright red, hue ~0
-        OrderState.FORCED_REFUNDED -> Color(0xFFC62828)           // deeper red, hue ~0
-        OrderState.REFUNDED -> Color(0xFFB71C1C)                  // darkest red, hue ~0
+        OrderStatus.FORCED_REFUND_IN_PROGRESS -> Color(0xFFD32F2F) // dark red, hue ~0
+        OrderStatus.REFUND_IN_PROGRESS -> Color(0xFFE53935)        // bright red, hue ~0
+        OrderStatus.FORCED_REFUNDED -> Color(0xFFC62828)           // deeper red, hue ~0
+        OrderStatus.REFUNDED -> Color(0xFFB71C1C)                  // darkest red, hue ~0
 
         // Palette 6: unknown / neutral
-        OrderState.UNKNOWN__ -> Color.Gray                         // neutral grey, no hue
+        OrderStatus.UNKNOWN -> Color.Gray                          // neutral grey, no hue
     }
 
 val Order.Item.Type.color: Color
@@ -710,8 +709,8 @@ fun SearchBar(
 
 @Composable
 fun StatesFilter(
-    selectedStates: List<OrderState>,
-    onChange: (List<OrderState>) -> Unit
+    selectedStates: List<OrderStatus>,
+    onChange: (List<OrderStatus>) -> Unit
 ) {
     data class HCL(val h: Float, val c: Float, val l: Float)
 
@@ -751,7 +750,7 @@ fun StatesFilter(
             .horizontalScroll(state = rememberScrollState())
             .fillMaxWidth()
     ) {
-        OrderState.knownEntries.sortedWith(
+        OrderStatus.knownEntries.sortedWith(
             /* This is for sure one of ways to sort order states o.o */
             compareByDescending { it.color.toHCL().h }
         ).forEach { state ->

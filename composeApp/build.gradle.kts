@@ -56,7 +56,9 @@ kotlin {
 
 apollo {
     service("DeelsAPI") {
-        packageName = "cz.deels.graphql"
+        packageName = "cz.deels.admin.app.graphql"
+        generateAsInternal = true
+
 
         @OptIn(ApolloExperimental::class)
         plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:${libs.versions.apollo.cache.get()}") {
@@ -71,12 +73,12 @@ apollo {
         mapScalar(
             "Datetime",
             "kotlin.time.Instant",
-            "cz.deels.admin.Apollo.InstantAdapter"
+            "cz.deels.admin.app.Apollo.InstantAdapter"
         )
         mapScalar(
             "Instant",
             "kotlin.time.Instant",
-            "cz.deels.admin.Apollo.InstantAdapter"
+            "cz.deels.admin.app.Apollo.InstantAdapter"
         )
         mapScalar(
             "Time",
@@ -86,7 +88,7 @@ apollo {
         mapScalar(
             "BigFloat",
             "kotlin.Double",
-            "cz.deels.admin.Apollo.BigDecimalAdapter"
+            "cz.deels.admin.app.Apollo.BigDecimalAdapter"
         )
     }
 }
