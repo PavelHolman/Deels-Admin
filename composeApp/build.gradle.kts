@@ -3,12 +3,14 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.apollo)
 }
+
+group = "cz.deels.admin.app"
 
 kotlin {
     compilerOptions {
@@ -16,9 +18,12 @@ kotlin {
         optIn.add("org.publicvalue.multiplatform.oidc.ExperimentalOpenIdConnect")
     }
 
-    androidTarget {
+    android {
+        namespace = "cz.deels.admin.app"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget = JvmTarget.JVM_11
         }
     }
 
@@ -34,65 +39,19 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.materialIconsExtended)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-
-            implementation(libs.apollo.runtime)
-            implementation(libs.apollo.normalized.cache)
-            implementation(libs.apollo.adapters)
-            implementation(libs.arrow.core)
-            implementation(libs.arrow.fx.coroutines)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.bundles.compose)
+            implementation(libs.bundles.apollo)
+            implementation(libs.bundles.arrow)
+            implementation(libs.bundles.kotlinx)
             implementation(libs.oidc.appsupport)
         }
+        iosMain.dependencies {}
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
-}
-
-android {
-    namespace = "cz.deels.admin"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-    defaultConfig {
-        applicationId = "cz.deels.admin"
-        manifestPlaceholders["oidcRedirectScheme"] = "cz.deels.app"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-}
-
-dependencies {
-    debugImplementation(compose.uiTooling)
 }
 
 apollo {
@@ -100,7 +59,7 @@ apollo {
         packageName = "cz.deels.graphql"
 
         @OptIn(ApolloExperimental::class)
-        plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:1.0.0-alpha.6") {
+        plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:${libs.versions.apollo.cache.get()}") {
             argument("com.apollographql.cache.packageName", packageName.get())
         }
         introspection {

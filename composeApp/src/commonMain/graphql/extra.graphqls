@@ -1,2 +1,15 @@
-extend type Query @typePolicy(connectionFields: "orders")
+extend schema
+@link(url: "https://specs.apollo.dev/kotlin_labs/v0.5")
+@link(
+    url: "https://specs.apollo.dev/nullability/v0.4",
+    import: ["@semanticNonNull", "@semanticNonNullField", "@catch", "CatchTo", "@catchByDefault"]
+)
+@link(
+    url: "https://specs.apollo.dev/cache/v0.3",
+    import: ["@connection", "@typePolicy"]
+)
+
+extend schema @catchByDefault(to: RESULT)
+
+extend type OrderConnection @connection
 extend type Order @typePolicy(keyFields: "id")

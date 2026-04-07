@@ -1,11 +1,11 @@
-package cz.deels.admin
+package cz.deels.admin.androiapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import cz.deels.admin.app.App
+import cz.deels.admin.app.flowFactory
 import org.publicvalue.multiplatform.oidc.appsupport.AndroidCodeAuthFlowFactory
 
 class MainActivity : ComponentActivity() {
@@ -18,10 +18,4 @@ class MainActivity : ComponentActivity() {
             App()
         }
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }

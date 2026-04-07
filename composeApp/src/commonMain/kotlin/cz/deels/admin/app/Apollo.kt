@@ -1,4 +1,4 @@
-package cz.deels.admin
+package cz.deels.admin.app
 
 import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
@@ -17,15 +17,11 @@ import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.apollographql.apollo.network.http.LoggingInterceptor
-import com.apollographql.cache.normalized.CacheManager
 import com.apollographql.cache.normalized.FetchPolicy
-import com.apollographql.cache.normalized.api.ConnectionMetadataGenerator
-import com.apollographql.cache.normalized.api.ConnectionRecordMerger
-import com.apollographql.cache.normalized.cacheManager
 import com.apollographql.cache.normalized.fetchPolicy
 import com.apollographql.cache.normalized.memory.MemoryCacheFactory
 import com.apollographql.cache.normalized.refetchPolicy
-import cz.deels.graphql.pagination.Pagination
+import cz.deels.graphql.cache.Cache.cache
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.last
@@ -38,13 +34,7 @@ import kotlin.time.Instant
 object Apollo {
     val client: ApolloClient = ApolloClient.Builder()
         .serverUrl("https://deels.cz/graphql")
-        .cacheManager(
-            CacheManager(
-                normalizedCacheFactory = MemoryCacheFactory(maxSizeBytes = 10 * 1024 * 1024),
-                metadataGenerator = ConnectionMetadataGenerator(Pagination.connectionTypes),
-                recordMerger = ConnectionRecordMerger,
-            )
-        )
+        .cache(MemoryCacheFactory(maxSizeBytes = 10 * 1024 * 1024))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .addHttpInterceptor(AuthInterceptor())
         .addHttpInterceptor(LoggingInterceptor())

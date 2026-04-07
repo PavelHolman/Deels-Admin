@@ -1,10 +1,10 @@
-package cz.deels.admin
+package cz.deels.admin.app
 
 import arrow.core.Either
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import org.publicvalue.multiplatform.oidc.OpenIdConnectClient
-import org.publicvalue.multiplatform.oidc.appsupport.CodeAuthFlowFactory
+import org.publicvalue.multiplatform.oidc.flows.CodeAuthFlowFactory
 import org.publicvalue.multiplatform.oidc.types.CodeChallengeMethod
 import org.publicvalue.multiplatform.oidc.types.remote.AccessTokenResponse
 

@@ -1,6 +1,7 @@
-package cz.deels.admin
+package cz.deels.admin.app
 
 import com.apollographql.apollo.api.Optional
+import com.apollographql.apollo.api.getOrNull
 import com.apollographql.cache.normalized.watch
 import cz.deels.graphql.OrdersQuery
 import cz.deels.graphql.type.OrderState
@@ -67,7 +68,7 @@ fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
     )
     .watch()
     .map { response ->
-        response.data?.orders?.let { data ->
+        response.data?.orders?.getOrNull()?.let { data ->
             Connection(
                 nodes = data.nodes.map(OrdersQuery.Node::toOrder),
                 cursor = data.pageInfo.endCursor.takeIf { data.pageInfo.hasNextPage },
@@ -97,7 +98,7 @@ private fun OrdersQuery.Node.toOrder(): Order = with(orderFragment.orderInfoFrag
     Order(
         id = id,
         createdAt = created,
-        expiresAt = expiration,
+        expiresAt = expiration.getOrNull(),
         totalAmount = totalSum,
         currency = currency.rawValue,
         status = state,
