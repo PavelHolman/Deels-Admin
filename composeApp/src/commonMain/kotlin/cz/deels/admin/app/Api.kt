@@ -14,7 +14,7 @@ import kotlin.time.Instant
 
 data class Connection<T>(
     val nodes: List<T>,
-    val cursor: Any?,
+    val cursor: Cursor?,
     val totalCount: Int,
 )
 
@@ -148,13 +148,13 @@ fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
         response.data?.orders?.getOrNull()?.let { data ->
             Connection(
                 nodes = data.nodes.map(OrdersQuery.Node::toOrder),
-                cursor = data.pageInfo.endCursor.takeIf { data.pageInfo.hasNextPage },
+                cursor = data.pageInfo.endCursor.getOrNull().takeIf { data.pageInfo.hasNextPage },
                 totalCount = data.totalCount,
             )
         }
     }
 
-suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Any) {
+suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Cursor) {
     client
         .query(
             OrdersQuery(

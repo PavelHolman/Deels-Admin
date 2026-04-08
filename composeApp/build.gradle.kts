@@ -90,5 +90,10 @@ apollo {
             "kotlin.Double",
             "cz.deels.admin.app.Apollo.BigDecimalAdapter"
         )
+        mapScalar(
+            "Cursor",
+            "cz.deels.admin.app.Cursor",
+            "cz.deels.admin.app.Apollo.CursorAdapter"
+        )
     }
 }

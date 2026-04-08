@@ -31,6 +31,8 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
+data class Cursor(val value: String)
+
 object Apollo {
     val client: ApolloClient = ApolloClient.Builder()
         .serverUrl("https://deels.cz/graphql")
@@ -95,6 +97,23 @@ object Apollo {
             value: Instant
         ) {
             writer.value(value.toLocalDateTime(TimeZone.UTC).toString())
+        }
+    }
+
+    object CursorAdapter : Adapter<Cursor> {
+        override fun fromJson(
+            reader: JsonReader,
+            customScalarAdapters: CustomScalarAdapters,
+        ): Cursor {
+            return Cursor(reader.nextString()!!)
+        }
+
+        override fun toJson(
+            writer: JsonWriter,
+            customScalarAdapters: CustomScalarAdapters,
+            value: Cursor,
+        ) {
+            writer.value(value.value)
         }
     }
 
