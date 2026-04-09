@@ -11,6 +11,7 @@ apollo-cache = "1.0.1"
 apollo-adapters = "0.7.0"
 arrow = "2.2.2.1"
 kotlinx-datetime = "0.7.1"
+kotlinx-coroutines = "1.10.2"
 kotlinx-serialization-json = "1.10.0"
 oidc = "0.16.5"
 materialIconsExtended = "1.7.3"
@@ -37,6 +38,7 @@ arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
 
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 
 oidc-appsupport = { module = "io.github.kalinjul.kotlin.multiplatform:oidc-appsupport", version.ref = "oidc" }
@@ -74,5 +76,6 @@ arrow = [
 
 kotlinx = [
     "kotlinx-datetime",
+    "kotlinx-coroutines-core",
     "kotlinx-serialization-json",
 ]

@@ -1,6 +1,7 @@
 package cz.deels.admin.core.oidc
 
 import arrow.core.Either
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import org.publicvalue.multiplatform.oidc.OpenIdConnectClient
@@ -10,12 +11,12 @@ import org.publicvalue.multiplatform.oidc.types.remote.AccessTokenResponse
 
 internal expect val flowFactory: CodeAuthFlowFactory
 
-class OidcClient {
-    companion object {
+public class OidcClient {
+    private companion object {
         private const val DISCOVERY_URI = "https://auth.deels.cz/.well-known/openid-configuration"
     }
 
-    val client = OpenIdConnectClient(discoveryUri = DISCOVERY_URI) {
+    public val client: OpenIdConnectClient = OpenIdConnectClient(discoveryUri = DISCOVERY_URI) {
         clientId = "303076730095075332"
         scope = listOf(
             "openid",
@@ -32,17 +33,15 @@ class OidcClient {
     }
 
     private val tokenFlow = MutableStateFlow<AccessTokenResponse?>(null)
-    val isLoggedInFlow = tokenFlow.map { it != null }
+    public val isLoggedInFlow: Flow<Boolean> = tokenFlow.map { it != null }
 
-    fun getAccessToken(): String? {
-        return tokenFlow.value?.access_token
-    }
+    public fun getAccessToken(): String? = tokenFlow.value?.access_token
 
-    suspend fun login() = Either.catch {
+    public suspend fun login(): Either<Throwable, Unit> = Either.catch {
         tokenFlow.value = flowFactory.createAuthFlow(client).getAccessToken()
     }
 
-    suspend fun logout() = Either.catch {
+    public suspend fun logout(): Either<Throwable, Unit> = Either.catch {
         flowFactory.createEndSessionFlow(client).endSession(tokenFlow.value?.id_token)
         tokenFlow.value = null
     }

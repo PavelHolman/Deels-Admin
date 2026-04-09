@@ -8,6 +8,8 @@ plugins {
 }
 
 kotlin {
+    explicitApi()
+
     android {
         namespace = "cz.deels.admin.core.graphql.schema"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -43,7 +45,11 @@ apollo {
             schemaFile = file("src/commonMain/graphql/schema.graphqls")
         }
         mapScalarToKotlinLong("BigInt")
-        mapScalarToKotlinString("UUID")
+        mapScalar(
+            "UUID",
+            "kotlin.uuid.Uuid",
+            "cz.deels.admin.core.graphql.schema.Apollo.UuidAdapter"
+        )
         mapScalar(
             "Datetime",
             "kotlin.time.Instant",

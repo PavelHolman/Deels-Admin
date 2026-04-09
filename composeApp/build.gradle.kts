@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.apollo)
 }
 
 kotlin {
@@ -39,6 +38,8 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.coreGraphqlSchema)
             implementation(projects.coreOidc)
+            implementation(projects.featureOrders.data)
+            implementation(projects.featureOrders.domain)
             implementation(libs.bundles.compose)
             implementation(libs.bundles.apollo)
             implementation(libs.bundles.arrow)
@@ -48,14 +49,5 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-    }
-}
-
-apollo {
-    service("DeelsAPI") {
-        packageName = "cz.deels.admin.app.graphql"
-        generateAsInternal = true
-        generateSourcesDuringGradleSync = true
-        dependsOn(projects.coreGraphqlSchema)
     }
 }

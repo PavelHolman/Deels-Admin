@@ -90,6 +90,9 @@ import androidx.compose.ui.window.Popup
 import arrow.core.Either
 import cz.deels.admin.core.graphql.schema.Apollo
 import cz.deels.admin.core.oidc.OidcClient
+import cz.deels.admin.feature.orders.data.injectOrdersRepo
+import cz.deels.admin.feature.orders.domain.Order
+import cz.deels.admin.feature.orders.domain.OrdersRepo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -222,8 +225,8 @@ fun OrdersSection(apollo: Apollo) {
         val from = to.minus(value = 1, unit = DateTimeUnit.MONTH)
 
         mutableStateOf(
-            OrdersFilter(
-                states = OrderStatus.knownEntries,
+            OrdersRepo.OrdersFilter(
+                states = Order.Status.knownEntries,
                 from = from,
                 to = to,
                 itemType = null,
@@ -231,7 +234,8 @@ fun OrdersSection(apollo: Apollo) {
             )
         )
     }
-    val ordersConnection by apollo.ordersFlow(filter = filter).collectAsState(initial = null)
+    val ordersRepo = remember { injectOrdersRepo(apollo) }
+    val ordersConnection by ordersRepo.ordersFlow(filter = filter).collectAsState(initial = null)
 
     val lazyListState = rememberLazyListState()
     val filterVisible by remember {
@@ -260,9 +264,6 @@ fun OrdersSection(apollo: Apollo) {
             when (val c = ordersConnection) {
                 null -> item { CircularProgressIndicator() }
                 c -> {
-                    val orders = c.nodes
-                    val cursor = c.cursor
-
                     stickyHeader {
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
@@ -300,7 +301,7 @@ fun OrdersSection(apollo: Apollo) {
                                         .padding(horizontal = 8.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = "${orders.size}/${c.totalCount}",
+                                        text = "${c.items.size}/${c.totalCount}",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.primary
@@ -318,14 +319,12 @@ fun OrdersSection(apollo: Apollo) {
                         }
                     }
 
-                    items(items = orders, key = { order -> order.id }) { order ->
+                    items(items = c.items, key = { order -> order.id }) { order ->
                         OrderItem(order)
                     }
-                    if (cursor != null) {
+                    c.fetchNextPage?.let { fetchNextPage ->
                         item {
-                            LaunchedEffect(cursor) {
-                                apollo.nextOrdersPage(filter = filter, cursor = cursor)
-                            }
+                            LaunchedEffect(Unit) { fetchNextPage() }
                             CircularProgressIndicator()
                         }
                     }
@@ -335,40 +334,40 @@ fun OrdersSection(apollo: Apollo) {
     }
 }
 
-val OrderStatus.color: Color
+val Order.Status.color: Color
     get() = when (this) {
         // Palette 1: dummy
-        OrderStatus.CREATION_DUMMY -> Color(0xFF9C92A3)            // muted purple-grey, hue ~280
+        Order.Status.CREATION_DUMMY -> Color(0xFF9C92A3)            // muted purple-grey, hue ~280
 
         // Palette 2: active / in-progress / pickups → greener/bluer
-        OrderStatus.NEW -> Color(0xFF1976D2)                       // deep blue, hue ~210
-        OrderStatus.PAYMENT_IN_PROCESS -> Color(0xFF2E7D32)        // green, hue ~120
-        OrderStatus.PAYMENT_AUTHORIZED -> Color(0xFF388E3C)        // green, hue ~120
-        OrderStatus.READY_FOR_FREE_PICK_UP -> Color(0xFF66BB6A)    // light green, hue ~130
-        OrderStatus.FREE__PICKED_UP -> Color(0xFF81C784)           // lighter green, hue ~130
-        OrderStatus.PICKED_UP -> Color(0xFF4CAF50)                 // green, hue ~120
-        OrderStatus.PAYMENT_PROCESSED -> Color(0xFF43A047)         // green, hue ~120
-        OrderStatus.PAYMENT_DELIVERED -> Color(0xFF64B5F6)         // soft blue, hue ~200
-        OrderStatus.STORE_SHARE_SENT -> Color(0xFF0288D1)          // cyan-blue, hue ~195
+        Order.Status.NEW -> Color(0xFF1976D2)                       // deep blue, hue ~210
+        Order.Status.PAYMENT_IN_PROCESS -> Color(0xFF2E7D32)        // green, hue ~120
+        Order.Status.PAYMENT_AUTHORIZED -> Color(0xFF388E3C)        // green, hue ~120
+        Order.Status.READY_FOR_FREE_PICK_UP -> Color(0xFF66BB6A)    // light green, hue ~130
+        Order.Status.FREE__PICKED_UP -> Color(0xFF81C784)           // lighter green, hue ~130
+        Order.Status.PICKED_UP -> Color(0xFF4CAF50)                 // green, hue ~120
+        Order.Status.PAYMENT_PROCESSED -> Color(0xFF43A047)         // green, hue ~120
+        Order.Status.PAYMENT_DELIVERED -> Color(0xFF64B5F6)         // soft blue, hue ~200
+        Order.Status.STORE_SHARE_SENT -> Color(0xFF0288D1)          // cyan-blue, hue ~195
 
         // Palette 3: rejected
-        OrderStatus.REJECTED_BY_STAFF -> Color(0xFFF44336)         // red, hue ~0
-        OrderStatus.REJECTED_MINOR -> Color(0xFFD32F2F)            // darker red, hue ~0
+        Order.Status.REJECTED_BY_STAFF -> Color(0xFFF44336)         // red, hue ~0
+        Order.Status.REJECTED_MINOR -> Color(0xFFD32F2F)            // darker red, hue ~0
 
         // Palette 4: expired / historical
-        OrderStatus.EXPIRED -> Color(0xFF8F7FA5)                   // darker purple-grey, hue ~260
-        OrderStatus.FREE__EXPIRED -> Color(0xFF8F7FA5)             // darker purple-grey, hue ~260
-        OrderStatus.EXPIRED__PAYMENT_DELIVERED -> Color(0xFF82769D) // even darker purple-grey, hue ~265
-        OrderStatus.EXPIRED__PAYMENT_PROCESSED -> Color(0xFF716B94) // muted purple-grey, hue ~270
+        Order.Status.EXPIRED -> Color(0xFF8F7FA5)                   // darker purple-grey, hue ~260
+        Order.Status.FREE__EXPIRED -> Color(0xFF8F7FA5)             // darker purple-grey, hue ~260
+        Order.Status.EXPIRED__PAYMENT_DELIVERED -> Color(0xFF82769D) // even darker purple-grey, hue ~265
+        Order.Status.EXPIRED__PAYMENT_PROCESSED -> Color(0xFF716B94) // muted purple-grey, hue ~270
 
         // Palette 5: refunds → more red
-        OrderStatus.FORCED_REFUND_IN_PROGRESS -> Color(0xFFD32F2F) // dark red, hue ~0
-        OrderStatus.REFUND_IN_PROGRESS -> Color(0xFFE53935)        // bright red, hue ~0
-        OrderStatus.FORCED_REFUNDED -> Color(0xFFC62828)           // deeper red, hue ~0
-        OrderStatus.REFUNDED -> Color(0xFFB71C1C)                  // darkest red, hue ~0
+        Order.Status.FORCED_REFUND_IN_PROGRESS -> Color(0xFFD32F2F) // dark red, hue ~0
+        Order.Status.REFUND_IN_PROGRESS -> Color(0xFFE53935)        // bright red, hue ~0
+        Order.Status.FORCED_REFUNDED -> Color(0xFFC62828)           // deeper red, hue ~0
+        Order.Status.REFUNDED -> Color(0xFFB71C1C)                  // darkest red, hue ~0
 
         // Palette 6: unknown / neutral
-        OrderStatus.UNKNOWN -> Color.Gray                          // neutral grey, no hue
+        Order.Status.UNKNOWN -> Color.Gray                          // neutral grey, no hue
     }
 
 val Order.Item.Type.color: Color
@@ -579,13 +578,13 @@ fun OrderItem(order: Order) {
                             )
                             Spacer(modifier = Modifier.height(height = 4.dp))
                             Text(
-                                text = order.id,
+                                text = order.id.toString(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(height = 12.dp))
                             Button(onClick = {
-                                clipboardManager.setText(AnnotatedString(text = order.id))
+                                clipboardManager.setText(AnnotatedString(text = order.id.toString()))
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 showCopyPopup = false
                             }) {
@@ -601,8 +600,8 @@ fun OrderItem(order: Order) {
 
 @Composable
 fun OrdersFilterBar(
-    filter: OrdersFilter,
-    onFilterChange: (OrdersFilter) -> Unit,
+    filter: OrdersRepo.OrdersFilter,
+    onFilterChange: (OrdersRepo.OrdersFilter) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -716,8 +715,8 @@ fun SearchBar(
 
 @Composable
 fun StatesFilter(
-    selectedStates: List<OrderStatus>,
-    onChange: (List<OrderStatus>) -> Unit
+    selectedStates: List<Order.Status>,
+    onChange: (List<Order.Status>) -> Unit
 ) {
     data class HCL(val h: Float, val c: Float, val l: Float)
 
@@ -757,7 +756,7 @@ fun StatesFilter(
             .horizontalScroll(state = rememberScrollState())
             .fillMaxWidth()
     ) {
-        OrderStatus.knownEntries.sortedWith(
+        Order.Status.knownEntries.sortedWith(
             /* This is for sure one of ways to sort order states o.o */
             compareByDescending { it.color.toHCL().h }
         ).forEach { state ->

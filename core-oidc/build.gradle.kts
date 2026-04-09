@@ -6,6 +6,8 @@ plugins {
 }
 
 kotlin {
+    explicitApi()
+
     android {
         namespace = "cz.deels.admin.core.oidc"
         compileSdk = libs.versions.android.compileSdk.get().toInt()

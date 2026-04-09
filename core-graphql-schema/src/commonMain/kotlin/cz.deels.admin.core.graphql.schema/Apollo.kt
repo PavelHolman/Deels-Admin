@@ -27,15 +27,16 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
-data class Cursor(val value: String)
+public data class Cursor(val value: String)
 
-class Apollo(tokenProvider: TokenProvider) {
-    fun interface TokenProvider {
-        suspend fun getAccessToken(): String?
+public class Apollo(tokenProvider: TokenProvider) {
+    public fun interface TokenProvider {
+        public suspend fun getAccessToken(): String?
     }
 
-    val client: ApolloClient = ApolloClient.Builder()
+    public val client: ApolloClient = ApolloClient.Builder()
         .serverUrl("https://deels.cz/graphql")
         .cache(MemoryCacheFactory(maxSizeBytes = 10 * 1024 * 1024))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
@@ -69,7 +70,24 @@ class Apollo(tokenProvider: TokenProvider) {
         }
     }
 
-    object BigDecimalAdapter : Adapter<Double> {
+    public object UuidAdapter : Adapter<Uuid> {
+        override fun fromJson(
+            reader: JsonReader,
+            customScalarAdapters: CustomScalarAdapters
+        ): Uuid {
+            return Uuid.parse(reader.nextString()!!)
+        }
+
+        override fun toJson(
+            writer: JsonWriter,
+            customScalarAdapters: CustomScalarAdapters,
+            value: Uuid,
+        ) {
+            writer.value(value.toString())
+        }
+    }
+
+    public object BigDecimalAdapter : Adapter<Double> {
         override fun fromJson(
             reader: JsonReader,
             customScalarAdapters: CustomScalarAdapters
@@ -86,7 +104,7 @@ class Apollo(tokenProvider: TokenProvider) {
         }
     }
 
-    object InstantAdapter : Adapter<Instant> {
+    public object InstantAdapter : Adapter<Instant> {
         override fun fromJson(
             reader: JsonReader,
             customScalarAdapters: CustomScalarAdapters
@@ -103,7 +121,7 @@ class Apollo(tokenProvider: TokenProvider) {
         }
     }
 
-    object CursorAdapter : Adapter<Cursor> {
+    public object CursorAdapter : Adapter<Cursor> {
         override fun fromJson(
             reader: JsonReader,
             customScalarAdapters: CustomScalarAdapters,
