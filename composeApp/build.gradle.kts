@@ -9,8 +9,6 @@ plugins {
     alias(libs.plugins.apollo)
 }
 
-group = "cz.deels.admin.app"
-
 kotlin {
     compilerOptions {
         optIn.add("kotlin.time.ExperimentalTime")
@@ -40,11 +38,11 @@ kotlin {
         androidMain.dependencies {}
         commonMain.dependencies {
             implementation(projects.coreGraphqlSchema)
+            implementation(projects.coreOidc)
             implementation(libs.bundles.compose)
             implementation(libs.bundles.apollo)
             implementation(libs.bundles.arrow)
             implementation(libs.bundles.kotlinx)
-            implementation(libs.oidc.appsupport)
         }
         iosMain.dependencies {}
         commonTest.dependencies {

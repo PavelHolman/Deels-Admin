@@ -1,6 +1,6 @@
-package cz.deels.admin.app
+package cz.deels.admin.core.oidc
 
 import org.publicvalue.multiplatform.oidc.appsupport.AndroidCodeAuthFlowFactory
 import org.publicvalue.multiplatform.oidc.flows.CodeAuthFlowFactory
 
-actual val flowFactory: CodeAuthFlowFactory = AndroidCodeAuthFlowFactory()
+internal actual val flowFactory: CodeAuthFlowFactory = AndroidCodeAuthFlowFactory()

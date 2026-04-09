@@ -4,8 +4,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
 }
 
-group = "cz.deels.admin.androidapp"
-
 android {
     namespace = "cz.deels.admin.androidapp"
     compileSdk {

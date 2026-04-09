@@ -1,4 +1,4 @@
-package cz.deels.admin.app
+package cz.deels.admin.core.oidc
 
 import arrow.core.Either
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -8,10 +8,13 @@ import org.publicvalue.multiplatform.oidc.flows.CodeAuthFlowFactory
 import org.publicvalue.multiplatform.oidc.types.CodeChallengeMethod
 import org.publicvalue.multiplatform.oidc.types.remote.AccessTokenResponse
 
-expect val flowFactory: CodeAuthFlowFactory
+internal expect val flowFactory: CodeAuthFlowFactory
 
-object Oidc {
-    private const val DISCOVERY_URI = "https://auth.deels.cz/.well-known/openid-configuration"
+class OidcClient {
+    companion object {
+        private const val DISCOVERY_URI = "https://auth.deels.cz/.well-known/openid-configuration"
+    }
+
     val client = OpenIdConnectClient(discoveryUri = DISCOVERY_URI) {
         clientId = "303076730095075332"
         scope = listOf(

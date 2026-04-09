@@ -89,6 +89,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import arrow.core.Either
 import cz.deels.admin.core.graphql.schema.Apollo
+import cz.deels.admin.core.oidc.OidcClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -116,12 +117,14 @@ import kotlin.time.Instant
 @Preview
 fun App() {
     MaterialTheme {
-        val isLoggedIn by Oidc.isLoggedInFlow.collectAsState(initial = false)
+        val oidcClient = remember { OidcClient() }
+        val apollo = remember { Apollo(oidcClient::getAccessToken) }
+        val isLoggedIn by oidcClient.isLoggedInFlow.collectAsState(initial = false)
 
         if (!isLoggedIn) {
-            LoggedOutScreen(onLoginClick = Oidc::login)
+            LoggedOutScreen(onLoginClick = oidcClient::login)
         } else {
-            LoggedInScreen(onLogoutClick = Oidc::logout)
+            LoggedInScreen(apollo, onLogoutClick = oidcClient::logout)
         }
     }
 }
@@ -164,7 +167,10 @@ fun LoggedOutScreen(onLoginClick: suspend () -> Either<*, *>) {
 }
 
 @Composable
-fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
+fun LoggedInScreen(
+    apollo: Apollo,
+    onLogoutClick: suspend () -> Either<*, *>,
+) {
     val focusManager = LocalFocusManager.current
 
     Box(
@@ -184,7 +190,7 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
             .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
             .padding(horizontal = 12.dp)
     ) {
-        OrdersSection()
+        OrdersSection(apollo = apollo)
 
         Box(
             modifier = Modifier
@@ -209,7 +215,7 @@ fun LoggedInScreen(onLogoutClick: suspend () -> Either<*, *>) {
 }
 
 @Composable
-fun OrdersSection() {
+fun OrdersSection(apollo: Apollo) {
     var filter by remember {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val to = today.plus(value = 1, unit = DateTimeUnit.DAY)
@@ -225,7 +231,6 @@ fun OrdersSection() {
             )
         )
     }
-    val apollo = remember { Apollo(Oidc::getAccessToken) }
     val ordersConnection by apollo.ordersFlow(filter = filter).collectAsState(initial = null)
 
     val lazyListState = rememberLazyListState()

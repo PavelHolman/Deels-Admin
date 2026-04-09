@@ -34,3 +34,4 @@ dependencyResolutionManagement {
 include(":androidapp")
 include(":composeApp")
 include(":core-graphql-schema")
+include(":core-oidc")

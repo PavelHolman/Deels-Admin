@@ -7,8 +7,6 @@ plugins {
     alias(libs.plugins.apollo)
 }
 
-group = "cz.deels.admin.core.graphql.schema"
-
 kotlin {
     android {
         namespace = "cz.deels.admin.core.graphql.schema"
