@@ -1,4 +1,4 @@
-package cz.deels.admin.androiapp
+package cz.deels.admin.androidapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity

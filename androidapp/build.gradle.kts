@@ -7,7 +7,7 @@ plugins {
 group = "cz.deels.admin.androidapp"
 
 android {
-    namespace = "cz.deels.admin"
+    namespace = "cz.deels.admin.androidapp"
     compileSdk {
         version = release(36)
     }
