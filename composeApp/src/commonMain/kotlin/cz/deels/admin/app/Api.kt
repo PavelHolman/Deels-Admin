@@ -4,8 +4,11 @@ import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.api.getOrNull
 import com.apollographql.cache.normalized.watch
 import cz.deels.admin.app.graphql.OrdersQuery
-import cz.deels.admin.app.graphql.type.OrderState
+import cz.deels.admin.core.graphql.schema.Apollo
+import cz.deels.admin.core.graphql.schema.Cursor
+import cz.deels.admin.core.graphql.type.OrderState
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -131,9 +134,30 @@ data class Order(
     }
 }
 
-fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
-    .query(
+fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client.query(
+    OrdersQuery(
+        filteredStates = filter.states.map { it.toOrderState() },
+        after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
+        before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
+        includeBundles = Order.Item.Type.Bundle == filter.itemType,
+        includeDiscounts = Order.Item.Type.Discount == filter.itemType,
+        includeLoyalties = Order.Item.Type.Loyalty == filter.itemType,
+        includeAllInverse = filter.itemType != null,
+    )
+).watch().map { response ->
+    response.data?.orders?.getOrNull()?.let { data ->
+        Connection(
+            nodes = data.nodes.map(OrdersQuery.Node::toOrder),
+            cursor = data.pageInfo.endCursor.getOrNull().takeIf { data.pageInfo.hasNextPage },
+            totalCount = data.totalCount,
+        )
+    }
+}
+
+suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Cursor) {
+    client.query(
         OrdersQuery(
+            cursor = Optional.present(cursor),
             filteredStates = filter.states.map { it.toOrderState() },
             after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
             before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
@@ -142,33 +166,7 @@ fun Apollo.ordersFlow(filter: OrdersFilter): Flow<Connection<Order>?> = client
             includeLoyalties = Order.Item.Type.Loyalty == filter.itemType,
             includeAllInverse = filter.itemType != null,
         )
-    )
-    .watch()
-    .map { response ->
-        response.data?.orders?.getOrNull()?.let { data ->
-            Connection(
-                nodes = data.nodes.map(OrdersQuery.Node::toOrder),
-                cursor = data.pageInfo.endCursor.getOrNull().takeIf { data.pageInfo.hasNextPage },
-                totalCount = data.totalCount,
-            )
-        }
-    }
-
-suspend fun Apollo.nextOrdersPage(filter: OrdersFilter, cursor: Cursor) {
-    client
-        .query(
-            OrdersQuery(
-                cursor = Optional.present(cursor),
-                filteredStates = filter.states.map { it.toOrderState() },
-                after = filter.from.atStartOfDayIn(TimeZone.currentSystemDefault()),
-                before = filter.to.atStartOfDayIn(TimeZone.currentSystemDefault()),
-                includeBundles = Order.Item.Type.Bundle == filter.itemType,
-                includeDiscounts = Order.Item.Type.Discount == filter.itemType,
-                includeLoyalties = Order.Item.Type.Loyalty == filter.itemType,
-                includeAllInverse = filter.itemType != null,
-            )
-        )
-        .executeFromNetwork()
+    ).toFlow().last()
 }
 
 private fun OrdersQuery.Node.toOrder(): Order = with(orderFragment.orderInfoFragment) {

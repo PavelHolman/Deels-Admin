@@ -1,11 +1,10 @@
-import com.apollographql.apollo.annotations.ApolloExperimental
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.apollo)
 }
@@ -38,9 +37,9 @@ kotlin {
     }
 
     sourceSets {
-        androidMain.dependencies {
-        }
+        androidMain.dependencies {}
         commonMain.dependencies {
+            implementation(projects.coreGraphqlSchema)
             implementation(libs.bundles.compose)
             implementation(libs.bundles.apollo)
             implementation(libs.bundles.arrow)
@@ -58,42 +57,7 @@ apollo {
     service("DeelsAPI") {
         packageName = "cz.deels.admin.app.graphql"
         generateAsInternal = true
-
-
-        @OptIn(ApolloExperimental::class)
-        plugin("com.apollographql.cache:normalized-cache-apollo-compiler-plugin:${libs.versions.apollo.cache.get()}") {
-            argument("com.apollographql.cache.packageName", packageName.get())
-        }
-        introspection {
-            endpointUrl = "https://test.deels.cz/graphql"
-            schemaFile = file("src/commonMain/graphql/schema.graphqls")
-        }
-        mapScalarToKotlinLong("BigInt")
-        mapScalarToKotlinString("UUID")
-        mapScalar(
-            "Datetime",
-            "kotlin.time.Instant",
-            "cz.deels.admin.app.Apollo.InstantAdapter"
-        )
-        mapScalar(
-            "Instant",
-            "kotlin.time.Instant",
-            "cz.deels.admin.app.Apollo.InstantAdapter"
-        )
-        mapScalar(
-            "Time",
-            "kotlinx.datetime.LocalTime",
-            "com.apollographql.adapter.datetime.KotlinxLocalTimeAdapter"
-        )
-        mapScalar(
-            "BigFloat",
-            "kotlin.Double",
-            "cz.deels.admin.app.Apollo.BigDecimalAdapter"
-        )
-        mapScalar(
-            "Cursor",
-            "cz.deels.admin.app.Cursor",
-            "cz.deels.admin.app.Apollo.CursorAdapter"
-        )
+        generateSourcesDuringGradleSync = true
+        dependsOn(projects.coreGraphqlSchema)
     }
 }

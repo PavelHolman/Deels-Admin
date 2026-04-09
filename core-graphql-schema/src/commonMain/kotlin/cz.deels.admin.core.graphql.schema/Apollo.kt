@@ -1,6 +1,5 @@
-package cz.deels.admin.app
+package cz.deels.admin.core.graphql.schema
 
-import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Adapter
 import com.apollographql.apollo.api.ApolloRequest
@@ -20,11 +19,9 @@ import com.apollographql.apollo.network.http.LoggingInterceptor
 import com.apollographql.cache.normalized.FetchPolicy
 import com.apollographql.cache.normalized.fetchPolicy
 import com.apollographql.cache.normalized.memory.MemoryCacheFactory
-import com.apollographql.cache.normalized.refetchPolicy
-import cz.deels.admin.app.graphql.cache.Cache.cache
+import cz.deels.admin.core.graphql.cache.Cache.cache
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.last
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -33,12 +30,16 @@ import kotlin.time.Instant
 
 data class Cursor(val value: String)
 
-object Apollo {
+class Apollo(tokenProvider: TokenProvider) {
+    fun interface TokenProvider {
+        suspend fun getAccessToken(): String?
+    }
+
     val client: ApolloClient = ApolloClient.Builder()
         .serverUrl("https://deels.cz/graphql")
         .cache(MemoryCacheFactory(maxSizeBytes = 10 * 1024 * 1024))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .addHttpInterceptor(AuthInterceptor())
+        .addHttpInterceptor(AuthInterceptor(tokenProvider))
         .addHttpInterceptor(LoggingInterceptor())
         .ignoreCacheMisses()
         .build()
@@ -54,12 +55,14 @@ object Apollo {
         })
     }
 
-    private class AuthInterceptor() : HttpInterceptor {
+    private class AuthInterceptor(
+        private val tokenProvider: TokenProvider,
+    ) : HttpInterceptor {
         override suspend fun intercept(
             request: HttpRequest,
             chain: HttpInterceptorChain
         ) = request.newBuilder().run {
-            Oidc.getAccessToken()?.let { token ->
+            tokenProvider.getAccessToken()?.let { token ->
                 addHeader("Authorization", "Bearer $token")
             }
             chain.proceed(build())
@@ -131,11 +134,4 @@ object Apollo {
             }
         }
     }
-}
-
-internal suspend fun <D> ApolloCall<D>.executeFromNetwork(): ApolloResponse<D> where D : Operation.Data {
-    return fetchPolicy(FetchPolicy.NetworkOnly)
-        .refetchPolicy(FetchPolicy.NetworkOnly)
-        .toFlow()
-        .last()
 }

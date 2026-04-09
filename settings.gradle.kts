@@ -33,3 +33,4 @@ dependencyResolutionManagement {
 
 include(":androidapp")
 include(":composeApp")
+include(":core-graphql-schema")

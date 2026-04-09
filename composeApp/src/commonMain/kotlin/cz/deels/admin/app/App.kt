@@ -88,6 +88,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import arrow.core.Either
+import cz.deels.admin.core.graphql.schema.Apollo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -224,7 +225,8 @@ fun OrdersSection() {
             )
         )
     }
-    val ordersConnection by Apollo.ordersFlow(filter = filter).collectAsState(initial = null)
+    val apollo = remember { Apollo(Oidc::getAccessToken) }
+    val ordersConnection by apollo.ordersFlow(filter = filter).collectAsState(initial = null)
 
     val lazyListState = rememberLazyListState()
     val filterVisible by remember {
@@ -317,7 +319,7 @@ fun OrdersSection() {
                     if (cursor != null) {
                         item {
                             LaunchedEffect(cursor) {
-                                Apollo.nextOrdersPage(filter = filter, cursor = cursor)
+                                apollo.nextOrdersPage(filter = filter, cursor = cursor)
                             }
                             CircularProgressIndicator()
                         }
