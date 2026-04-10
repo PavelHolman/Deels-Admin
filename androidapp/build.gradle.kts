@@ -33,6 +33,7 @@ android {
 
 dependencies {
     implementation(projects.composeApp)
+    implementation(projects.coreOidc)
     implementation(libs.androidx.activity.compose)
     implementation(libs.oidc.appsupport)
     implementation(libs.bundles.compose)

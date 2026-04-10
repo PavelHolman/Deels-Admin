@@ -9,7 +9,7 @@ import org.publicvalue.multiplatform.oidc.flows.CodeAuthFlowFactory
 import org.publicvalue.multiplatform.oidc.types.CodeChallengeMethod
 import org.publicvalue.multiplatform.oidc.types.remote.AccessTokenResponse
 
-internal expect val flowFactory: CodeAuthFlowFactory
+public expect val flowFactory: CodeAuthFlowFactory
 
 public class OidcClient {
     private companion object {
